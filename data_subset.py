@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.dates import DayLocator, HourLocator, DateFormatter, drange
 from netCDF4 import Dataset
+import datetime
 
 # READ DATA
 path = "git/prob_meteogram/data/"
