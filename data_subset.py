@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.dates import DayLocator, HourLocator, DateFormatter, drange
+from matplotlib.dates import DayLocator, HourLocator, DateFormatter, drange, date2num, num2date
 from netCDF4 import Dataset
 from matplotlib.ticker import FormatStrFormatter
 import datetime
 from matplotlib import gridspec
+from scipy.interpolate import interp1d
 
 # READ DATA
 path = "git/prob_meteogram/data/"
@@ -40,6 +41,19 @@ lcc = DAT.variables["lcc"][:,:,lati,loni]
 mcc = DAT.variables["mcc"][:,:,lati,loni]
 hcc = DAT.variables["hcc"][:,:,lati,loni]
 
+## smooth and mean temperature
+SPLINE_RES = 360
+
+t_mean = np.mean(t, axis=1)
+
+numdates = date2num(dates)
+t_mean_spline = interp1d(numdates, t_mean, kind='cubic')
+dates_fine = np.linspace(numdates[0], numdates[-1], num=SPLINE_RES)
+
+t_data_spline = np.empty((SPLINE_RES, t.shape[1]))
+for e in range(0, t.shape[1]):
+    t_spline = interp1d(numdates, t[:,e], kind='cubic')
+    t_data_spline[:,e] = t_spline(dates_fine)
 
 ##  axes formatting
 def cloud_ax_format(ax,loc):
@@ -47,7 +61,7 @@ def cloud_ax_format(ax,loc):
     ax.set_title("Meteogram London ({:.1f}°N, {:.1f}°E)".format(loc[0],loc[1]),loc="left",fontweight="bold")
     ax.set_xticks([])
     ax.set_yticks([])
-    
+
 def rain_ax_format(ax):
     ax.set_xticks([])
     ax.set_yticks([])
@@ -57,24 +71,39 @@ def temp_ax_format(ax,dates):
     ax.set_yticks(np.arange(0,30,3))    #TODO make automatic
     ax.set_ylim(4,28)                   #TODO make automatic
     ax.yaxis.set_major_formatter(FormatStrFormatter('%d°C'))
-    
+
     # x axis lims, ticks, labels
     ax.set_xlim(dates[0],dates[-1])
     ax.xaxis.set_minor_locator(HourLocator(np.arange(0, 25, 6)))    # minor
     ax.xaxis.set_minor_formatter(DateFormatter("%Hh"))
     ax.get_xaxis().set_tick_params(which='minor', direction='in',pad=-10,labelsize=6)
     ax.grid(alpha=0.1)
-    
+
     ax.xaxis.set_major_locator(DayLocator())                        # major
     ax.xaxis.set_major_formatter(DateFormatter(" %a\n %d %b"))
     for tick in ax.xaxis.get_majorticklabels():
         tick.set_horizontalalignment("left")
-    
+
     # remove labels at edges
     ax.get_xticklabels()[-1].set_visible(False)
     ax.get_xticklabels(which="minor")[-1].set_visible(False)
     ax.get_xticklabels(which="minor")[0].set_visible(False)
-    
+
+# plotting routines
+
+def temp_plotter(ax, times, mean_spline, data_spline, mean_c='r', data_c='orange', alpha=0.05):
+    mean = mean_spline(times)
+    data = data_spline
+
+    ax.plot(times, mean, mean_c)
+
+    for i in range(data.shape[1]):
+        ax.fill_between(times,
+                        mean,
+                        data[:,i],
+                        facecolor=data_c,
+                        alpha=alpha)
+
 
 # PLOTTING
 fig = plt.figure(figsize=(10,4))
@@ -93,10 +122,6 @@ rain_ax_format(rain_ax)
 temp_ax_format(temp_ax,dates)
 
 
-temp_ax.plot(dates,t,"C1",lw=0.5)
+temp_plotter(temp_ax, dates_fine, t_mean_spline, t_data_spline)
 
 plt.show()
-
-
-
-
