@@ -114,7 +114,22 @@ def sunrise_sunset(loc,date):
     t_sunset = datetime.datetime(2000,1,1,t_sunset.hour,t_sunset.minute)
 
     # add utcoffset
+    t_sunrise = (t_sunrise+utcoffset).time()
+    t_sunset = (t_sunset+utcoffset).time()		
 
+    return t_sunrise,t_sunset
+
+def sunrise_string(loc,date):
+
+    sunsymb = u"\u263C"
+    arrowup = u"\u2191"
+    arrowdn = u"\u2193"
+
+    sunrise,sunset = sunrise_sunset(loc,date)
+    sunrise_str = "{:0=2d}:{:0=2d}".format(sunrise.hour,sunrise.minute)
+    sunset_str = "{:0=2d}:{:0=2d}".format(sunset.hour,sunset.minute)
+
+    return sunsymb+arrowup+sunrise_str+arrowdn+sunset_str
 # PICK LOCATION based on geopy
 loc_search = LOC_ARG
 
