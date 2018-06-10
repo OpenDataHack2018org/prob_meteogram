@@ -50,10 +50,14 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud):
     totalcloudhalf=totalcloud/2.
     lowerbound=-totalcloudhalf+0.5
     upperbound=totalcloudhalf+0.5
+
+    # don't plot clouds where totalcloud <= e.g. 0.05
+    threshold=0.05
+
     # highcloud light grey, lowcloud dark grey
-    axis.fill_between(dates, y1=lowerbound, y2=upperbound, color='0.95',zorder=1, alpha=0.8, edgecolor='none')
-    axis.fill_between(dates, y1=lowerbound, y2=upperbound-highcloudm/3., color='0.7',zorder=2, alpha=0.6, edgecolor='none')
-    axis.fill_between(dates, y1=lowerbound, y2=lowerbound+lowcloudm/3.,  color='0.4',zorder=3, alpha=0.3, edgecolor='none')
+    axis.fill_between(dates, y1=lowerbound, y2=upperbound, color='0.95',zorder=1, alpha=0.8, edgecolor='none',where=totalcloud>=threshold)
+    axis.fill_between(dates, y1=lowerbound, y2=upperbound-highcloudm/3., color='0.7',zorder=2, alpha=0.6, edgecolor='none',where=totalcloud>=threshold)
+    axis.fill_between(dates, y1=lowerbound, y2=lowerbound+lowcloudm/3.,  color='0.4',zorder=3, alpha=0.3, edgecolor='none',where=totalcloud>=threshold)
     axis.set_facecolor('lightskyblue')
     axis.set_xlim([dates[0],dates[-1]])
     axis.set_ylim([0., 1])
