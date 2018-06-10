@@ -84,15 +84,15 @@ def convert_longitude(lon):
 
 def lon_string(lon):
     if lon >= 0:
-        return "{:.1f}°E".format(lon)
+        return "{:.1f}".format(lon)+u'\N{DEGREE SIGN}'+"E"
     else:
-        return "{:.1f}°W".format(abs(lon))
+        return "{:.1f}".format(abs(lon))+u'\N{DEGREE SIGN}'+"W"
     
 def lat_string(lat):
     if lat > 0:
-        return "{:.1f}°N".format(lat)
+        return "{:.1f}".format(lat)+u'\N{DEGREE SIGN}'+"N"
     else:
-        return "{:.1f}°S".format(abs(lat))
+        return "{:.1f}".format(abs(lat))+u'\N{DEGREE SIGN}'+"S"
 
 def sunrise_sunset(loc,date):
     # find timezone first
@@ -116,9 +116,9 @@ def sunrise_sunset(loc,date):
 
 def sunrise_string(loc,date):
     
-    sunsymb = "\u263C"
-    arrowup = "\u2191"
-    arrowdn = "\u2193"
+    sunsymb = u"\u263C"
+    arrowup = u"\u2191"
+    arrowdn = u"\u2193"
     
     sunrise,sunset = sunrise_sunset(loc,date)
     sunrise_str = "{:0=2d}:{:0=2d}".format(sunrise.hour,sunrise.minute)
