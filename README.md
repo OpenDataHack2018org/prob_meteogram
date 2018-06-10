@@ -16,3 +16,15 @@ The solution I propose is an inuitive way of visualizing the probabilistic infor
     Geopy, tzwhere
 
 can be installed via pip.
+
+# HOW TO USE
+
+This script will create a probabilistc meteogram for a given city or location. Will require ECMWF EPS data in a folder called "/data", which is not provided in this repository. Then do
+
+    python meteogram.py
+    
+to create a meteogram for Rio de Janeiro, Brazil. You can also to
+
+    python meteogram.py "ECMWF Reading"
+
+and specify your own location.
