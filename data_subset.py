@@ -6,6 +6,7 @@ from matplotlib.ticker import FormatStrFormatter
 import datetime
 from matplotlib import gridspec
 from scipy.interpolate import interp1d
+from matplotlib.patches import Circle, Ellipse
 
 # READ DATA
 path = "git/prob_meteogram/data/"
@@ -24,6 +25,27 @@ dates = [datetime0 + datetime.timedelta(hours=int(t)) for t in time]
 def find_closest(x,a):
     """ Finds the closest index in x to a given value a."""
     return np.argmin(abs(x-a))
+
+def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud):
+    """ Adds the different types of clouds to a given axis."""
+    # add sun (and moon?)
+    for t in np.arange(time.shape[0]):
+        if dates[t].hour==12:
+            #sun = Circle((dates[t], 0.5), 0.2, color='yellow', zorder=0)
+            sun = Ellipse((dates[t], 0.5), 0.4/1.5, 0.4, angle=0.0, color='yellow', zorder=0)
+            axis.add_artist(sun)
+    # add mean cloud covers and scale to [0...1]
+    totalcloud=(highcloud.mean(axis=1)+midcloud.mean(axis=1)+lowcloud.mean(axis=1))/3.
+    totalcloudhalf=totalcloud/2.
+    lowerbound=-totalcloudhalf+0.5
+    upperbound=totalcloudhalf+0.5
+    # highcloud light grey, lowcloud dark grey
+    axis.fill_between(dates, y1=lowerbound, y2=upperbound, color='0.95',zorder=1, alpha=0.8)
+    axis.fill_between(dates, y1=lowerbound, y2=upperbound-highcloud.mean(axis=1)/3., color='0.7',zorder=2, alpha=0.6)
+    axis.fill_between(dates, y1=lowerbound, y2=lowerbound+lowcloud.mean(axis=1)/3.,  color='0.4',zorder=3, alpha=0.3)
+    axis.set_facecolor('lightskyblue')
+    axis.set_xlim([dates[0],dates[-1]])
+    axis.set_ylim([0., 1])
 
 # PICK LOCATION
 lat0 = 51.5      # in degrees
@@ -58,7 +80,7 @@ for e in range(0, t.shape[1]):
 ##  axes formatting
 def cloud_ax_format(ax,loc):
     #TODO make city automatic?
-    ax.set_title("Meteogram London ({:.1f}°N, {:.1f}°E)".format(loc[0],loc[1]),loc="left",fontweight="bold")
+    ax.set_title("Meteogram London ({:.1f}N, {:.1f}E)".format(loc[0],loc[1]),loc="left",fontweight="bold")
     ax.set_xticks([])
     ax.set_yticks([])
 
@@ -70,8 +92,8 @@ def temp_ax_format(ax,dates):
     ax.text(0.02,0.94,"sun up/down",fontsize=8,transform=ax.transAxes)
     ax.set_yticks(np.arange(0,30,3))    #TODO make automatic
     ax.set_ylim(4,28)                   #TODO make automatic
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%d°C'))
-
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%d'+u'\N{DEGREE SIGN}'+'C'))
+    
     # x axis lims, ticks, labels
     ax.set_xlim(dates[0],dates[-1])
     ax.xaxis.set_minor_locator(HourLocator(np.arange(0, 25, 6)))    # minor
@@ -109,7 +131,7 @@ def temp_plotter(ax, times, mean_spline, data_spline, mean_c='r', data_c='orange
 fig = plt.figure(figsize=(10,4))
 
 # subplots adjust
-all_ax = gridspec.GridSpec(3, 1, height_ratios=[1,1,10],hspace=0)
+all_ax = gridspec.GridSpec(3, 1, height_ratios=[2,2,8],hspace=0)
 cloud_ax = plt.subplot(all_ax[0])
 rain_ax = plt.subplot(all_ax[1])
 temp_ax = plt.subplot(all_ax[2])
@@ -121,7 +143,8 @@ cloud_ax_format(cloud_ax,loc)
 rain_ax_format(rain_ax)
 temp_ax_format(temp_ax,dates)
 
-
 temp_plotter(temp_ax, dates_fine, t_mean_spline, t_data_spline)
+add_clouds_to(cloud_ax,dates,hcc,mcc,lcc)
+
 
 plt.show()
