@@ -19,7 +19,10 @@ import pytz
 
 ## LOCATION ARGUMENT
 tz = tzwhere.tzwhere()
-LOC_ARG = sys.argv[1]
+if len(sys.argv) > 1:
+    LOC_ARG = sys.argv[1]
+else:
+    LOC_ARG = "Rio de Janeiro Brazil"
 
 ## READ DATA
 DAT = Dataset(HERE_PATH+"/data/forecast.nc")
