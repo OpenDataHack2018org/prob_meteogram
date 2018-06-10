@@ -39,7 +39,7 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud):
     for t in np.arange(time.shape[0]):
         if dates[t].hour==12:
             #sun = Circle((dates[t], 0.5), 0.2, color='yellow', zorder=0)
-            sun = Ellipse((dates[t], 0.5), 0.4/1.5, 0.4, angle=0.0, color='yellow', zorder=0)
+            sun = Ellipse((dates[t], 0.5), 0.4/2., 0.4, angle=0.0, color='yellow', zorder=0)
             axis.add_artist(sun)
     # add mean cloud covers and scale to [0...1]
     highcloudm = np.median(highcloud,axis=1)
@@ -59,8 +59,8 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud):
     axis.set_ylim([0., 1])
 
 # PICK LOCATION
-lat0 = 21.5      # in degrees
-lon0 = 0
+lat0 = 51.5      # in degrees
+lon0 = 10.
 
 lati = find_closest(lat,lat0)   # index for given location
 loni = find_closest(lon,lon0)
@@ -116,7 +116,7 @@ C0_medrain[:,3] = P[2,:]
 C0_heavyrain[:,3] = P[3,:]
 
 C0_example = C0_blue[:2,:]
-C0_example[:,-1] = [0.3,1.]
+C0_example[:,-1] = [0.2,1.]
 
 dsize = 28
 dstring = "o"
@@ -125,7 +125,7 @@ dstring = "o"
 ##  axes formatting
 def cloud_ax_format(ax,dates,loc):
     #TODO make city automatic?
-    ax.set_title("Meteogram London ({:.1f}N, {:.1f}E)".format(loc[0],loc[1]),loc="left",fontweight="bold")
+    ax.set_title("Meteogram Bremen ({:.1f}°N, {:.1f}°E)".format(loc[0],loc[1]),loc="left",fontweight="bold")
     ax.set_xticks([])
     ax.set_yticks([])
  
@@ -140,7 +140,7 @@ def rain_ax_format(ax,dates):
     ax.text(0.92,0.3,"less likely",fontsize=8,transform=ax.transAxes,ha="left")
 
 def temp_ax_format(ax,tminmax,dates):
-    ax.text(0.02,0.94,"sun up/down",fontsize=8,transform=ax.transAxes)
+    ax.text(0.01,0.92,"\u263C \u21914:39 \u219321:49",fontsize=10,transform=ax.transAxes)
     ax.set_yticks(np.arange(np.round(tminmax[0])-3,np.round(tminmax[1])+3,3))    #TODO make automatic
     ax.set_ylim(np.round(tminmax[0])-3,np.round(tminmax[1])+3)                   #TODO make automatic
     ax.yaxis.set_major_formatter(FormatStrFormatter('%d'+u'\N{DEGREE SIGN}'+'C'))
@@ -161,14 +161,19 @@ def temp_ax_format(ax,tminmax,dates):
     ax.get_xticklabels()[-1].set_visible(False)
     ax.get_xticklabels(which="minor")[-1].set_visible(False)
     ax.get_xticklabels(which="minor")[0].set_visible(False)
+    
+    # add vertical line after each sunday
+    mondays = [d for d in dates if d.weekday() == 0 and d.hour == 0]
+    for m in mondays:
+        ax.plot([m,m],[-50,50],"k",lw=0.1)
+    
 
 # plotting routines
-
-def temp_plotter(ax, times, mean_spline, data_spline, mean_c='r', data_c='orange', alpha=0.05):
+def temp_plotter(ax, times, mean_spline, data_spline, mean_c='C1', data_c='orange', alpha=0.05):
     mean = mean_spline(times)
     data = data_spline
 
-    ax.plot(times, mean, mean_c)
+    #ax.plot(times, mean, mean_c)
 
     for i in range(data.shape[1]):
         ax.fill_between(times,mean,data[:,i],facecolor=data_c,alpha=alpha)
