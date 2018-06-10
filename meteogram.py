@@ -17,8 +17,9 @@ from sunrise import sun
 from tzwhere import tzwhere
 import pytz
 
-## LOCATION ARGUMENT
+# LOCATION ARGUMENT
 tz = tzwhere.tzwhere()
+
 if len(sys.argv) > 1:
     LOC_ARG = sys.argv[1]
 else:
@@ -33,10 +34,12 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud, interp=True):
     """ Adds the different types of clouds to a given axis."""
     # add sun (and moon?)
     for t in np.arange(len(dates)):
-        if dates[t].hour==12:
+        idate = datetime.datetime(2018,6,7,12,0)
+        while idate < dates[-1]:
             #sun = Circle((dates[t], 0.5), 0.2, color='yellow', zorder=0)
-            sun = Ellipse((dates[t], 0.5), 0.4/2., 0.4, angle=0.0, color='yellow', zorder=0)
+            sun = Ellipse((idate, 0.5), 0.4/2., 0.4, angle=0.0, color='yellow', zorder=0)
             axis.add_artist(sun)
+            idate = idate + datetime.timedelta(1)
 
     # interpolate dates (if set)
     if interp:
@@ -116,7 +119,7 @@ def sunrise_string(loc,date):
     
     return sunsymb+arrowup+sunrise_str+arrowdn+sunset_str
 
-## READ DATA
+# READ DATA
 DAT = Dataset(HERE_PATH+"/data/forecast.nc")
 DATrain = Dataset(HERE_PATH+"/data/precip.nc")
 
@@ -260,7 +263,7 @@ def temp_ax_format(ax,tminmax,dates):
     ax.get_xticklabels(which="minor")[0].set_visible(False)
 
     # add vertical line after each sunday
-    mondays = [d for d in dates if d.weekday() == 0 and d.hour == 0]
+    mondays = [datetime.datetime(2018,6,11,0,0)]
     for m in mondays:
         ax.plot([m,m],[-50,50],"k",lw=0.1)
 
