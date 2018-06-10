@@ -50,11 +50,11 @@ class sun:
   day is a decimal day between 0.0 and 1.0, e.g. noon = 0.5 
   """  
   hours  = 24.0*day  
-  h      = int(hours)  
+  h      = int(hours) % 24
   minutes= (hours-h)*60  
-  m      = int(minutes)  
+  m      = int(minutes) % 60
   seconds= (minutes-m)*60  
-  s      = int(seconds)  
+  s      = int(seconds) % 60
   return time(hour=h,minute=m,second=s)  
   
  def __preptime(self,when):  

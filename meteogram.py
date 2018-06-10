@@ -98,7 +98,7 @@ def sunrise_sunset(loc,date):
     # find timezone first
     timezone_str = tz.tzNameAt(loc.latitude,loc.longitude)
     timezone = pytz.timezone(timezone_str)
-    dt = timezone.utcoffset(date)
+    utcoffset = timezone.utcoffset(date)
     
     sunsun = sun(lat=loc.latitude,long=loc.longitude)
     t_sunrise = sunsun.sunrise(when=date)
@@ -109,8 +109,8 @@ def sunrise_sunset(loc,date):
     t_sunset = datetime.datetime(2000,1,1,t_sunset.hour,t_sunset.minute)
     
     # add utcoffset
-    t_sunrise = (t_sunrise+dt).time()
-    t_sunset = (t_sunset+dt).time()
+    t_sunrise = (t_sunrise+utcoffset).time()
+    t_sunset = (t_sunset+utcoffset).time()
     
     return t_sunrise,t_sunset
 
@@ -121,13 +121,13 @@ def sunrise_string(loc,date):
     arrowdn = "\u2193"
     
     sunrise,sunset = sunrise_sunset(loc,date)
-    sunrise_str = "{:d}:{:d}".format(sunrise.hour,sunrise.minute)
-    sunset_str = "{:d}:{:d}".format(sunset.hour,sunset.minute)
+    sunrise_str = "{:0=2d}:{:0=2d}".format(sunrise.hour,sunrise.minute)
+    sunset_str = "{:0=2d}:{:0=2d}".format(sunset.hour,sunset.minute)
     
     return sunsymb+arrowup+sunrise_str+arrowdn+sunset_str
 
 # PICK LOCATION based on geopy
-loc_search = "Rio de Janeiro Brazil"
+loc_search = "Cape Town"
 
 geolocator = Nominatim()
 loc = geolocator.geocode(loc_search)
@@ -142,9 +142,7 @@ v = DAT.variables["v10"][:,:,lati,loni]
 lcc = DAT.variables["lcc"][:,:,lati,loni]
 mcc = DAT.variables["mcc"][:,:,lati,loni]
 hcc = DAT.variables["hcc"][:,:,lati,loni]
-#TODO this is only large-scale preicipitation, add convective precip?
-lsp = DATrain.variables["lsp"][:,:,lati,loni]*1e4
-
+lsp = DATrain.variables["lsp"][:,:,lati,loni]*1e4       # only large-scale precip
 
 # smooth and mean data
 SPLINE_RES = 360
@@ -154,7 +152,6 @@ def spline_dates(dates, resolution=SPLINE_RES):
     numdates = date2num(dates)
     numdates_spline = np.linspace(numdates[0], numdates[-1], num=resolution)
     return num2date(numdates_spline)
-
 numdates = date2num(dates)
 
 # temperature
@@ -226,8 +223,8 @@ def rain_ax_format(ax,dates):
 
 def temp_ax_format(ax,tminmax,dates):
     ax.text(0.01,0.92,sunrise_string(loc,dates[0]),fontsize=10,transform=ax.transAxes)
-    ax.set_yticks(np.arange(np.round(tminmax[0])-3,np.round(tminmax[1])+3,3))    #TODO make automatic
-    ax.set_ylim(np.round(tminmax[0])-3,np.round(tminmax[1])+3)                   #TODO make automatic
+    ax.set_yticks(np.arange(np.round(tminmax[0])-3,np.round(tminmax[1])+3,3))
+    ax.set_ylim(np.round(tminmax[0])-3,np.round(tminmax[1])+3)
     ax.yaxis.set_major_formatter(FormatStrFormatter('%d'+u'\N{DEGREE SIGN}'+'C'))
 
     # x axis lims, ticks, labels
