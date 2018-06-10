@@ -36,7 +36,7 @@ def find_closest(x,a):
 def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud):
     """ Adds the different types of clouds to a given axis."""
     # add sun (and moon?)
-    for t in np.arange(time.shape[0]):
+    for t in np.arange(len(dates)):
         if dates[t].hour==12:
             #sun = Circle((dates[t], 0.5), 0.2, color='yellow', zorder=0)
             sun = Ellipse((dates[t], 0.5), 0.4/2., 0.4, angle=0.0, color='yellow', zorder=0)
@@ -45,7 +45,7 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud):
     highcloudm = np.median(highcloud,axis=1)
     midcloudm = np.median(midcloud,axis=1)
     lowcloudm = np.median(lowcloud,axis=1)
-    
+
     totalcloud=(highcloudm+midcloudm+lowcloudm)/3.
     totalcloudhalf=totalcloud/2.
     lowerbound=-totalcloudhalf+0.5
@@ -77,20 +77,30 @@ hcc = DAT.variables["hcc"][:,:,lati,loni]
 lsp = DATrain.variables["lsp"][:,:,lati,loni]*1e4
 
 
-## smooth and mean temperature
+## smooth and mean data
 SPLINE_RES = 360
 
-t_mean = np.mean(t, axis=1)
-tminmax = (t.min(),t.max()) 
-
 numdates = date2num(dates)
-t_mean_spline = interp1d(numdates, t_mean, kind='cubic')
-dates_fine = np.linspace(numdates[0], numdates[-1], num=SPLINE_RES)
+numdates_spline = np.linspace(numdates[0], numdates[-1], num=SPLINE_RES)
+dates_spline = num2date(numdates_spline)
 
-t_data_spline = np.empty((SPLINE_RES, t.shape[1]))
-for e in range(0, t.shape[1]):
-    t_spline = interp1d(numdates, t[:,e], kind='cubic')
-    t_data_spline[:,e] = t_spline(dates_fine)
+# temperature
+t_mean = np.mean(t, axis=1)
+tminmax = (t.min(),t.max())
+t_mean_spline = interp1d(numdates, t_mean, kind='cubic')
+
+def spline_data_by_date(data, numdates=numdates, resolution=SPLINE_RES):
+    numdates_spline = np.linspace(numdates[0], numdates[-1], num=resolution)
+    data_spline = np.empty((resolution, data.shape[1]))
+    for e in range(0, data.shape[1]):
+        spline = interp1d(numdates, data[:,e], kind='cubic')
+        data_spline[:,e] = spline(numdates_spline)
+    return data_spline
+
+t_data_spline = spline_data_by_date(t)
+lcc_data_spline = spline_data_by_date(lcc)
+mcc_data_spline = spline_data_by_date(mcc)
+hcc_data_spline = spline_data_by_date(hcc)
 
 ## calculate precipitation probability
 bins = np.array([min(0,lsp.min()),0.05,0.5,1,max(2,lsp.max())])        # in mm
@@ -128,7 +138,7 @@ def cloud_ax_format(ax,dates,loc):
     ax.set_title("Meteogram Bremen ({:.1f}°N, {:.1f}°E)".format(loc[0],loc[1]),loc="left",fontweight="bold")
     ax.set_xticks([])
     ax.set_yticks([])
- 
+
 def rain_ax_format(ax,dates):
     ax.set_xlim(dates[0],dates[-1])
     ax.set_ylim(-0.5,2.5)
@@ -144,14 +154,14 @@ def temp_ax_format(ax,tminmax,dates):
     ax.set_yticks(np.arange(np.round(tminmax[0])-3,np.round(tminmax[1])+3,3))    #TODO make automatic
     ax.set_ylim(np.round(tminmax[0])-3,np.round(tminmax[1])+3)                   #TODO make automatic
     ax.yaxis.set_major_formatter(FormatStrFormatter('%d'+u'\N{DEGREE SIGN}'+'C'))
-    
+
     # x axis lims, ticks, labels
     ax.set_xlim(dates[0],dates[-1])
     ax.xaxis.set_minor_locator(HourLocator(np.arange(0, 25, 6)))    # minor
     ax.xaxis.set_minor_formatter(DateFormatter("%Hh"))
     ax.get_xaxis().set_tick_params(which='minor', direction='in',pad=-10,labelsize=6)
     ax.grid(alpha=0.15)
-    
+
     ax.xaxis.set_major_locator(DayLocator())                        # major
     ax.xaxis.set_major_formatter(DateFormatter(" %a\n %d %b"))
     for tick in ax.xaxis.get_majorticklabels():
@@ -161,12 +171,12 @@ def temp_ax_format(ax,tminmax,dates):
     ax.get_xticklabels()[-1].set_visible(False)
     ax.get_xticklabels(which="minor")[-1].set_visible(False)
     ax.get_xticklabels(which="minor")[0].set_visible(False)
-    
+
     # add vertical line after each sunday
     mondays = [d for d in dates if d.weekday() == 0 and d.hour == 0]
     for m in mondays:
         ax.plot([m,m],[-50,50],"k",lw=0.1)
-    
+
 
 # plotting routines
 def temp_plotter(ax, times, mean_spline, data_spline, mean_c='C1', data_c='orange', alpha=0.05):
@@ -195,8 +205,8 @@ cloud_ax_format(cloud_ax,dates,loc)
 rain_ax_format(rain_ax,dates)
 temp_ax_format(temp_ax,tminmax,dates)
 
-temp_plotter(temp_ax, dates_fine, t_mean_spline, t_data_spline)
-add_clouds_to(cloud_ax,dates,hcc,mcc,lcc)
+temp_plotter(temp_ax, numdates_spline, t_mean_spline, t_data_spline)
+add_clouds_to(cloud_ax,dates_spline,hcc_data_spline,mcc_data_spline,lcc_data_spline)
 
 
 # light rain
