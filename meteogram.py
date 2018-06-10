@@ -17,8 +17,9 @@ from sunrise import sun
 from tzwhere import tzwhere
 import pytz
 
-## LOCATION ARGUMENT
+# LOCATION ARGUMENT
 tz = tzwhere.tzwhere()
+
 if len(sys.argv) > 1:
     LOC_ARG = sys.argv[1]
 else:
@@ -116,7 +117,7 @@ def sunrise_string(loc,date):
     
     return sunsymb+arrowup+sunrise_str+arrowdn+sunset_str
 
-## READ DATA
+# READ DATA
 DAT = Dataset(HERE_PATH+"/data/forecast.nc")
 DATrain = Dataset(HERE_PATH+"/data/precip.nc")
 
@@ -260,7 +261,7 @@ def temp_ax_format(ax,tminmax,dates):
     ax.get_xticklabels(which="minor")[0].set_visible(False)
 
     # add vertical line after each sunday
-    mondays = [d for d in dates if d.weekday() == 0 and d.hour == 0]
+    mondays = [datetime.datetime(2018,6,11,0,0)]
     for m in mondays:
         ax.plot([m,m],[-50,50],"k",lw=0.1)
 
