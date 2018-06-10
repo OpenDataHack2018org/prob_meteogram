@@ -33,7 +33,7 @@ def find_closest(x,a):
     """ Finds the closest index in x to a given value a."""
     return np.argmin(abs(x-a))
 
-def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud):
+def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud, interp=True):
     """ Adds the different types of clouds to a given axis."""
     # add sun (and moon?)
     for t in np.arange(len(dates)):
@@ -41,6 +41,11 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud):
             #sun = Circle((dates[t], 0.5), 0.2, color='yellow', zorder=0)
             sun = Ellipse((dates[t], 0.5), 0.4/2., 0.4, angle=0.0, color='yellow', zorder=0)
             axis.add_artist(sun)
+
+    # interpolate dates (if set)
+    if interp:
+        dates = spline_dates(dates)
+
     # add mean cloud covers and scale to [0...1]
     highcloudm = np.median(highcloud,axis=1)
     midcloudm = np.median(midcloud,axis=1)
@@ -80,15 +85,20 @@ lsp = DATrain.variables["lsp"][:,:,lati,loni]*1e4
 ## smooth and mean data
 SPLINE_RES = 360
 
+def spline_dates(dates, resolution=SPLINE_RES):
+
+    numdates = date2num(dates)
+    numdates_spline = np.linspace(numdates[0], numdates[-1], num=resolution)
+    return num2date(numdates_spline)
+
 numdates = date2num(dates)
-numdates_spline = np.linspace(numdates[0], numdates[-1], num=SPLINE_RES)
-dates_spline = num2date(numdates_spline)
 
 # temperature
 t_mean = np.mean(t, axis=1)
 tminmax = (t.min(),t.max())
 t_mean_spline = interp1d(numdates, t_mean, kind='cubic')
 
+# interpolation of data
 def spline_data_by_date(data, numdates=numdates, resolution=SPLINE_RES):
     numdates_spline = np.linspace(numdates[0], numdates[-1], num=resolution)
     data_spline = np.empty((resolution, data.shape[1]))
@@ -180,13 +190,14 @@ def temp_ax_format(ax,tminmax,dates):
 
 # plotting routines
 def temp_plotter(ax, times, mean_spline, data_spline, mean_c='C1', data_c='orange', alpha=0.05):
-    mean = mean_spline(times)
+    numtime = date2num(spline_dates(times))
+    mean = mean_spline(numtime)
     data = data_spline
 
     #ax.plot(times, mean, mean_c)
 
     for i in range(data.shape[1]):
-        ax.fill_between(times,mean,data[:,i],facecolor=data_c,alpha=alpha)
+        ax.fill_between(numtime,mean,data[:,i],facecolor=data_c,alpha=alpha)
 
 
 # PLOTTING
@@ -205,8 +216,8 @@ cloud_ax_format(cloud_ax,dates,loc)
 rain_ax_format(rain_ax,dates)
 temp_ax_format(temp_ax,tminmax,dates)
 
-temp_plotter(temp_ax, numdates_spline, t_mean_spline, t_data_spline)
-add_clouds_to(cloud_ax,dates_spline,hcc_data_spline,mcc_data_spline,lcc_data_spline)
+temp_plotter(temp_ax, dates, t_mean_spline, t_data_spline, alpha=0.2)
+add_clouds_to(cloud_ax,dates,hcc_data_spline,mcc_data_spline,lcc_data_spline)
 
 
 # light rain
