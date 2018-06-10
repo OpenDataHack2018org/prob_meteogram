@@ -142,8 +142,8 @@ C0_heavyrain[:,3] = P[3,:]
 C0_example = C0_blue[:2,:]
 C0_example[:,-1] = [0.2,1.]
 
-dsize = 28
-dstring = "o"
+dsize = 78
+dstring = (2, 0, 45) #"|" #(1, 0, 45) #"o"
 
 
 ##  axes formatting
@@ -159,9 +159,10 @@ def rain_ax_format(ax,dates):
     ax.set_xticks([])
     ax.set_yticks([])
     ax.plot([0.88,0.88],[-1,3],transform=ax.transAxes,alpha=.5,lw=0.5)
-    ax.scatter([0.9,0.9],[0.35,0.65],dsize,color=C0_example,transform=ax.transAxes,marker=dstring)
-    ax.text(0.92,0.6,"very likely",fontsize=8,transform=ax.transAxes,ha="left")
-    ax.text(0.92,0.3,"less likely",fontsize=8,transform=ax.transAxes,ha="left")
+    ax.scatter([0.9,0.9],[0.3,0.55],dsize,linewidths=2,color=C0_example,transform=ax.transAxes,marker=dstring)
+    ax.text(0.92,0.75,"rainfall",fontsize=8,fontweight="bold",transform=ax.transAxes,ha="left")
+    ax.text(0.92,0.5,"very likely",fontsize=8,transform=ax.transAxes,ha="left")
+    ax.text(0.92,0.25,"less likely",fontsize=8,transform=ax.transAxes,ha="left")
 
 def temp_ax_format(ax,tminmax,dates):
     ax.text(0.01,0.92,"\u263C \u21914:39 \u219321:49",fontsize=10,transform=ax.transAxes)
@@ -225,15 +226,18 @@ add_clouds_to(cloud_ax,dates,hcc_data_spline,mcc_data_spline,lcc_data_spline)
 
 
 # light rain
-rain_ax.scatter(rdates,np.zeros_like(rdates),dsize,color=C0_lightrain,marker=dstring)
+rain_ax.scatter(rdates,np.zeros_like(rdates),dsize,linewidths=2,color=C0_lightrain,marker=dstring)
 
 # medium rain
-rain_ax.scatter([d+dt for d in rdates],1.08+np.zeros_like(rdates),dsize,color=C0_medrain,marker=dstring)
-rain_ax.scatter([d-dt for d in rdates],0.92+np.zeros_like(rdates),dsize,color=C0_medrain,marker=dstring)
+rain_ax.scatter([d+dt for d in rdates],1.08+np.zeros_like(rdates),dsize,linewidths=2,color=C0_medrain,marker=dstring)
+rain_ax.scatter([d-dt for d in rdates],0.92+np.zeros_like(rdates),dsize,linewidths=2,color=C0_medrain,marker=dstring)
 
 # heavy rain
-rain_ax.scatter(rdates,2.15+np.zeros_like(rdates),dsize,color=C0_heavyrain,marker=dstring)
-rain_ax.scatter([d+dt for d in rdates],2.03+np.zeros_like(rdates),dsize,color=C0_heavyrain,marker=dstring)
-rain_ax.scatter([d-dt for d in rdates],1.97+np.zeros_like(rdates),dsize,color=C0_heavyrain,marker=dstring)
+rain_ax.scatter([d+dt+dt for d in rdates],2.15+np.zeros_like(rdates),dsize,linewidths=2,color=C0_heavyrain,marker=dstring)
+rain_ax.scatter([d+dt for d in rdates],2.03+np.zeros_like(rdates),dsize,linewidths=2,color=C0_heavyrain,marker=dstring)
+rain_ax.scatter([d-dt for d in rdates],1.97+np.zeros_like(rdates),dsize,linewidths=2,color=C0_heavyrain,marker=dstring)
+
+rain_ax.yaxis.set_ticks(np.arange(3))
+rain_ax.set_yticklabels(('light','medium','heavy'), fontsize=8)
 
 plt.show()
