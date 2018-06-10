@@ -17,7 +17,9 @@ from sunrise import sun
 from tzwhere import tzwhere
 import pytz
 
+## LOCATION ARGUMENT
 tz = tzwhere.tzwhere()
+LOC_ARG = sys.argv[1]
 
 ## READ DATA
 DAT = Dataset(HERE_PATH+"/data/forecast.nc")
@@ -75,7 +77,7 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud, interp=True):
     axis.set_facecolor('lightskyblue')
     axis.set_xlim([dates[0],dates[-1]])
     axis.set_ylim([0., 1])
-    
+
 def convert_longitude(lon):
     if lon < 0:
         return 360.+lon
@@ -87,7 +89,7 @@ def lon_string(lon):
         return "{:.1f}".format(lon)+u'\N{DEGREE SIGN}'+"E"
     else:
         return "{:.1f}".format(abs(lon))+u'\N{DEGREE SIGN}'+"W"
-    
+
 def lat_string(lat):
     if lat > 0:
         return "{:.1f}".format(lat)+u'\N{DEGREE SIGN}'+"N"
@@ -99,35 +101,19 @@ def sunrise_sunset(loc,date):
     timezone_str = tz.tzNameAt(loc.latitude,loc.longitude)
     timezone = pytz.timezone(timezone_str)
     utcoffset = timezone.utcoffset(date)
-    
+
     sunsun = sun(lat=loc.latitude,long=loc.longitude)
     t_sunrise = sunsun.sunrise(when=date)
     t_sunset = sunsun.sunset(when=date)
-    
+
     # convert from time to datetime object
     t_sunrise = datetime.datetime(2000,1,1,t_sunrise.hour,t_sunrise.minute)
     t_sunset = datetime.datetime(2000,1,1,t_sunset.hour,t_sunset.minute)
-    
-    # add utcoffset
-    t_sunrise = (t_sunrise+utcoffset).time()
-    t_sunset = (t_sunset+utcoffset).time()
-    
-    return t_sunrise,t_sunset
 
-def sunrise_string(loc,date):
-    
-    sunsymb = u"\u263C"
-    arrowup = u"\u2191"
-    arrowdn = u"\u2193"
-    
-    sunrise,sunset = sunrise_sunset(loc,date)
-    sunrise_str = "{:0=2d}:{:0=2d}".format(sunrise.hour,sunrise.minute)
-    sunset_str = "{:0=2d}:{:0=2d}".format(sunset.hour,sunset.minute)
-    
-    return sunsymb+arrowup+sunrise_str+arrowdn+sunset_str
+    # add utcoffset
 
 # PICK LOCATION based on geopy
-loc_search = "Cape Town"
+loc_search = LOC_ARG
 
 geolocator = Nominatim()
 loc = geolocator.geocode(loc_search)
