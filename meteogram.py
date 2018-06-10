@@ -1,3 +1,7 @@
+import os, sys, inspect
+HERE_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+sys.path.append(HERE_PATH)
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.dates import DayLocator, HourLocator, DateFormatter, drange, date2num, num2date
@@ -8,11 +12,16 @@ from matplotlib import gridspec
 from scipy.interpolate import interp1d
 from matplotlib.patches import Circle, Ellipse
 from matplotlib.collections import PatchCollection
+from geopy.geocoders import Nominatim
+from sunrise import sun
+from tzwhere import tzwhere
+import pytz
 
-# READ DATA
-path = "git/prob_meteogram/data/"
-DAT = Dataset(path+"forecast.nc")
-DATrain = Dataset(path+"precip.nc")
+tz = tzwhere.tzwhere()
+
+## READ DATA
+DAT = Dataset(HERE_PATH+"/data/forecast.nc")
+DATrain = Dataset(HERE_PATH+"/data/precip.nc")
 
 # grid
 lat = DAT.variables["latitude"][:]
@@ -66,14 +75,65 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud, interp=True):
     axis.set_facecolor('lightskyblue')
     axis.set_xlim([dates[0],dates[-1]])
     axis.set_ylim([0., 1])
+    
+def convert_longitude(lon):
+    if lon < 0:
+        return 360.+lon
+    else:
+        return lon
 
-# PICK LOCATION
-lat0 = 51.5      # in degrees
-lon0 = 10.
+def lon_string(lon):
+    if lon >= 0:
+        return "{:.1f}°E".format(lon)
+    else:
+        return "{:.1f}°W".format(abs(lon))
+    
+def lat_string(lat):
+    if lat > 0:
+        return "{:.1f}°N".format(lat)
+    else:
+        return "{:.1f}°S".format(abs(lat))
 
-lati = find_closest(lat,lat0)   # index for given location
-loni = find_closest(lon,lon0)
-loc = (lat[lati],lon[loni])
+def sunrise_sunset(loc,date):
+    # find timezone first
+    timezone_str = tz.tzNameAt(loc.latitude,loc.longitude)
+    timezone = pytz.timezone(timezone_str)
+    dt = timezone.utcoffset(date)
+    
+    sunsun = sun(lat=loc.latitude,long=loc.longitude)
+    t_sunrise = sunsun.sunrise(when=date)
+    t_sunset = sunsun.sunset(when=date)
+    
+    # convert from time to datetime object
+    t_sunrise = datetime.datetime(2000,1,1,t_sunrise.hour,t_sunrise.minute)
+    t_sunset = datetime.datetime(2000,1,1,t_sunset.hour,t_sunset.minute)
+    
+    # add utcoffset
+    t_sunrise = (t_sunrise+dt).time()
+    t_sunset = (t_sunset+dt).time()
+    
+    return t_sunrise,t_sunset
+
+def sunrise_string(loc,date):
+    
+    sunsymb = "\u263C"
+    arrowup = "\u2191"
+    arrowdn = "\u2193"
+    
+    sunrise,sunset = sunrise_sunset(loc,date)
+    sunrise_str = "{:d}:{:d}".format(sunrise.hour,sunrise.minute)
+    sunset_str = "{:d}:{:d}".format(sunset.hour,sunset.minute)
+    
+    return sunsymb+arrowup+sunrise_str+arrowdn+sunset_str
+
+# PICK LOCATION based on geopy
+loc_search = "Rio de Janeiro Brazil"
+
+geolocator = Nominatim()
+loc = geolocator.geocode(loc_search)
+
+lati = find_closest(lat,loc.latitude)   # index for given location
+loni = find_closest(lon,convert_longitude(loc.longitude))
 
 # extract data for given location
 t = DAT.variables["t2m"][:,:,lati,loni]-273.15      # Kelvin to degC
@@ -86,7 +146,7 @@ hcc = DAT.variables["hcc"][:,:,lati,loni]
 lsp = DATrain.variables["lsp"][:,:,lati,loni]*1e4
 
 
-## smooth and mean data
+# smooth and mean data
 SPLINE_RES = 360
 
 def spline_dates(dates, resolution=SPLINE_RES):
@@ -116,7 +176,7 @@ lcc_data_spline = spline_data_by_date(lcc)
 mcc_data_spline = spline_data_by_date(mcc)
 hcc_data_spline = spline_data_by_date(hcc)
 
-## calculate precipitation probability
+# calculate precipitation probability
 bins = np.array([min(0,lsp.min()),0.05,0.5,1,max(2,lsp.max())])        # in mm
 
 P = np.empty((len(bins)-1,len(rdates)))                  # probablity per rainfall category
@@ -146,10 +206,10 @@ dsize = 28
 dstring = "o"
 
 
-##  axes formatting
+#  axes formatting
 def cloud_ax_format(ax,dates,loc):
-    #TODO make city automatic?
-    ax.set_title("Meteogram Bremen ({:.1f}".format(loc[0])+u"\N{DEGREE SIGN}"+"N, {:.1f}".format(loc[1])+u"\N{DEGREE SIGN}"+"E)",loc="left",fontweight="bold")
+    loc_name = loc.address.split(",")[0]
+    ax.set_title("Meteogram "+loc_name+" ("+lat_string(loc.latitude)+", "+lon_string(loc.longitude)+")",loc="left",fontweight="bold")
     ax.set_xticks([])
     ax.set_yticks([])
 
@@ -164,7 +224,7 @@ def rain_ax_format(ax,dates):
     ax.text(0.92,0.3,"less likely",fontsize=8,transform=ax.transAxes,ha="left")
 
 def temp_ax_format(ax,tminmax,dates):
-    ax.text(0.01,0.92,"\u263C \u21914:39 \u219321:49",fontsize=10,transform=ax.transAxes)
+    ax.text(0.01,0.92,sunrise_string(loc,dates[0]),fontsize=10,transform=ax.transAxes)
     ax.set_yticks(np.arange(np.round(tminmax[0])-3,np.round(tminmax[1])+3,3))    #TODO make automatic
     ax.set_ylim(np.round(tminmax[0])-3,np.round(tminmax[1])+3)                   #TODO make automatic
     ax.yaxis.set_major_formatter(FormatStrFormatter('%d'+u'\N{DEGREE SIGN}'+'C'))

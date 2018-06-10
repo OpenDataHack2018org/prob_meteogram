@@ -10,3 +10,9 @@ Example: Every forecast of an ensemble forecast might propose a little bit of ra
 # Proposed solution
 
 The solution I propose is an inuitive way of visualizing the probabilistic information of an ensemble forecast in the form of a meteogram (as the public is mostly interested in the weather at a given location). By "intuitive" I mean a meteogram that is easy to understand for everyone without a statistics background. It is supposed to present the future weather at a given location in a very condensed way, such that 10 seconds are enough to understand what you are likely to expect and what the possible extremes are. I believe that the additional information about the uncertainty of a forecast will increase public confidence in weather forecasting, important for a wider outreach of publicly funded data.
+
+# Dependencies
+
+    Geopy, tzwhere
+
+can be installed via pip.
