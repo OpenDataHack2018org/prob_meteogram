@@ -19,24 +19,6 @@ import pytz
 
 tz = tzwhere.tzwhere()
 
-## READ DATA
-DAT = Dataset(HERE_PATH+"/data/forecast.nc")
-DATrain = Dataset(HERE_PATH+"/data/precip.nc")
-
-# grid
-lat = DAT.variables["latitude"][:]
-lon = DAT.variables["longitude"][:]
-time = DAT.variables["time"][:]
-n_members = len(DAT.variables["number"][:])
-
-# convert time to datetime objects
-datetime0 = datetime.datetime(1900,1,1)
-dt = datetime.timedelta(hours=0.7)
-dates = [datetime0 + datetime.timedelta(hours=int(t)) for t in time]
-three_hours = datetime.timedelta(hours=3.)
-rain_left_space = 6
-rdates = [d+three_hours for d in dates[:-rain_left_space]]
-
 # FUNCTIONS
 def find_closest(x,a):
     """ Finds the closest index in x to a given value a."""
@@ -76,6 +58,7 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud, interp=True):
     axis.set_xlim([dates[0],dates[-1]])
     axis.set_ylim([0., 1])
     
+  
 def convert_longitude(lon):
     if lon < 0:
         return 360.+lon
@@ -94,11 +77,15 @@ def lat_string(lat):
     else:
         return "{:.1f}".format(abs(lat))+u'\N{DEGREE SIGN}'+"S"
 
-def sunrise_sunset(loc,date):
-    # find timezone first
+def timezone_offset(loc,date):
     timezone_str = tz.tzNameAt(loc.latitude,loc.longitude)
     timezone = pytz.timezone(timezone_str)
     utcoffset = timezone.utcoffset(date)
+    return utcoffset
+
+def sunrise_sunset(loc,date):
+    # find timezone first
+    utcoffset = timezone_offset(loc,date)
     
     sunsun = sun(lat=loc.latitude,long=loc.longitude)
     t_sunrise = sunsun.sunrise(when=date)
@@ -126,14 +113,38 @@ def sunrise_string(loc,date):
     
     return sunsymb+arrowup+sunrise_str+arrowdn+sunset_str
 
+## READ DATA
+DAT = Dataset(HERE_PATH+"/data/forecast.nc")
+DATrain = Dataset(HERE_PATH+"/data/precip.nc")
+
+# grid
+lat = DAT.variables["latitude"][:]
+lon = DAT.variables["longitude"][:]
+time = DAT.variables["time"][:]
+n_members = len(DAT.variables["number"][:])
+
+# convert time to datetime objects
+datetime0 = datetime.datetime(1900,1,1)
+dt = datetime.timedelta(hours=0.7)
+dates = [datetime0 + datetime.timedelta(hours=int(t)) for t in time]
+three_hours = datetime.timedelta(hours=3.)
+
 # PICK LOCATION based on geopy
-loc_search = "Cape Town"
+loc_search = "Honolulu Hawaii"
 
 geolocator = Nominatim()
 loc = geolocator.geocode(loc_search)
 
 lati = find_closest(lat,loc.latitude)   # index for given location
 loni = find_closest(lon,convert_longitude(loc.longitude))
+
+# shift dates according to timezone
+utcoffset = timezone_offset(loc,dates[0])
+dates = [d-utcoffset for d in dates]
+
+# shifted datevector for rain
+rain_left_space = 6
+rdates = [d+three_hours for d in dates[:-rain_left_space]]
 
 # extract data for given location
 t = DAT.variables["t2m"][:,:,lati,loni]-273.15      # Kelvin to degC
@@ -152,6 +163,7 @@ def spline_dates(dates, resolution=SPLINE_RES):
     numdates = date2num(dates)
     numdates_spline = np.linspace(numdates[0], numdates[-1], num=resolution)
     return num2date(numdates_spline)
+    
 numdates = date2num(dates)
 
 # temperature
@@ -249,19 +261,6 @@ def temp_ax_format(ax,tminmax,dates):
     for m in mondays:
         ax.plot([m,m],[-50,50],"k",lw=0.1)
 
-
-# plotting routines
-def temp_plotter(ax, times, mean_spline, data_spline, mean_c='C1', data_c='orange', alpha=0.05):
-    numtime = date2num(spline_dates(times))
-    mean = mean_spline(numtime)
-    data = data_spline
-
-    #ax.plot(times, mean, mean_c)
-
-    for i in range(data.shape[1]):
-        ax.fill_between(numtime,mean,data[:,i],facecolor=data_c,alpha=alpha)
-
-
 # PLOTTING
 fig = plt.figure(figsize=(10,4))
 
@@ -280,6 +279,16 @@ temp_ax_format(temp_ax,tminmax,dates)
 
 temp_plotter(temp_ax, dates, t_mean_spline, t_data_spline)
 add_clouds_to(cloud_ax,dates,hcc_data_spline,mcc_data_spline,lcc_data_spline)
+
+def temp_plotter(ax, times, mean_spline, data_spline, mean_c='C1', data_c='orange', alpha=0.05):
+    numtime = date2num(spline_dates(times))
+    mean = mean_spline(numtime)
+    data = data_spline
+
+    #ax.plot(times, mean, mean_c)
+
+    for i in range(data.shape[1]):
+        ax.fill_between(numtime,mean,data[:,i],facecolor=data_c,alpha=alpha)  
 
 
 # light rain
