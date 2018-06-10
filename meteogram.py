@@ -42,20 +42,24 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud):
             sun = Ellipse((dates[t], 0.5), 0.4/1.5, 0.4, angle=0.0, color='yellow', zorder=0)
             axis.add_artist(sun)
     # add mean cloud covers and scale to [0...1]
-    totalcloud=(highcloud.mean(axis=1)+midcloud.mean(axis=1)+lowcloud.mean(axis=1))/3.
+    highcloudm = np.median(highcloud,axis=1)
+    midcloudm = np.median(midcloud,axis=1)
+    lowcloudm = np.median(lowcloud,axis=1)
+    
+    totalcloud=(highcloudm+midcloudm+lowcloudm)/3.
     totalcloudhalf=totalcloud/2.
     lowerbound=-totalcloudhalf+0.5
     upperbound=totalcloudhalf+0.5
     # highcloud light grey, lowcloud dark grey
-    axis.fill_between(dates, y1=lowerbound, y2=upperbound, color='0.95',zorder=1, alpha=0.8)
-    axis.fill_between(dates, y1=lowerbound, y2=upperbound-highcloud.mean(axis=1)/3., color='0.7',zorder=2, alpha=0.6)
-    axis.fill_between(dates, y1=lowerbound, y2=lowerbound+lowcloud.mean(axis=1)/3.,  color='0.4',zorder=3, alpha=0.3)
+    axis.fill_between(dates, y1=lowerbound, y2=upperbound, color='0.95',zorder=1, alpha=0.8, edgecolor='none')
+    axis.fill_between(dates, y1=lowerbound, y2=upperbound-highcloudm/3., color='0.7',zorder=2, alpha=0.6, edgecolor='none')
+    axis.fill_between(dates, y1=lowerbound, y2=lowerbound+lowcloudm/3.,  color='0.4',zorder=3, alpha=0.3, edgecolor='none')
     axis.set_facecolor('lightskyblue')
     axis.set_xlim([dates[0],dates[-1]])
     axis.set_ylim([0., 1])
 
 # PICK LOCATION
-lat0 = 51.5      # in degrees
+lat0 = 21.5      # in degrees
 lon0 = 0
 
 lati = find_closest(lat,lat0)   # index for given location
@@ -77,6 +81,7 @@ lsp = DATrain.variables["lsp"][:,:,lati,loni]*1e4
 SPLINE_RES = 360
 
 t_mean = np.mean(t, axis=1)
+tminmax = (t.min(),t.max()) 
 
 numdates = date2num(dates)
 t_mean_spline = interp1d(numdates, t_mean, kind='cubic')
@@ -134,10 +139,10 @@ def rain_ax_format(ax,dates):
     ax.text(0.92,0.6,"very likely",fontsize=8,transform=ax.transAxes,ha="left")
     ax.text(0.92,0.3,"less likely",fontsize=8,transform=ax.transAxes,ha="left")
 
-def temp_ax_format(ax,dates):
+def temp_ax_format(ax,tminmax,dates):
     ax.text(0.02,0.94,"sun up/down",fontsize=8,transform=ax.transAxes)
-    ax.set_yticks(np.arange(0,30,3))    #TODO make automatic
-    ax.set_ylim(4,28)                   #TODO make automatic
+    ax.set_yticks(np.arange(np.round(tminmax[0])-3,np.round(tminmax[1])+3,3))    #TODO make automatic
+    ax.set_ylim(np.round(tminmax[0])-3,np.round(tminmax[1])+3)                   #TODO make automatic
     ax.yaxis.set_major_formatter(FormatStrFormatter('%d'+u'\N{DEGREE SIGN}'+'C'))
     
     # x axis lims, ticks, labels
@@ -183,7 +188,7 @@ plt.tight_layout(rect=[0.02,.03,1,0.97])
 # do axes formatting
 cloud_ax_format(cloud_ax,dates,loc)
 rain_ax_format(rain_ax,dates)
-temp_ax_format(temp_ax,dates)
+temp_ax_format(temp_ax,tminmax,dates)
 
 temp_plotter(temp_ax, dates_fine, t_mean_spline, t_data_spline)
 add_clouds_to(cloud_ax,dates,hcc,mcc,lcc)
