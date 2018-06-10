@@ -220,7 +220,7 @@ cloud_ax_format(cloud_ax,dates,loc)
 rain_ax_format(rain_ax,dates)
 temp_ax_format(temp_ax,tminmax,dates)
 
-temp_plotter(temp_ax, dates, t_mean_spline, t_data_spline, alpha=0.2)
+temp_plotter(temp_ax, dates, t_mean_spline, t_data_spline)
 add_clouds_to(cloud_ax,dates,hcc_data_spline,mcc_data_spline,lcc_data_spline)
 
 
