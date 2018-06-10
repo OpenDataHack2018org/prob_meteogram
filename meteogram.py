@@ -135,7 +135,7 @@ dstring = "o"
 ##  axes formatting
 def cloud_ax_format(ax,dates,loc):
     #TODO make city automatic?
-    ax.set_title("Meteogram Bremen ({:.1f}°N, {:.1f}°E)".format(loc[0],loc[1]),loc="left",fontweight="bold")
+    ax.set_title("Meteogram Bremen ({:.1f}".format(loc[0])+u"\N{DEGREE SIGN}"+"N, {:.1f}".format(loc[1])+u"\N{DEGREE SIGN}"+"E)",loc="left",fontweight="bold")
     ax.set_xticks([])
     ax.set_yticks([])
 
