@@ -261,6 +261,17 @@ def temp_ax_format(ax,tminmax,dates):
     for m in mondays:
         ax.plot([m,m],[-50,50],"k",lw=0.1)
 
+def temp_plotter(ax, times, mean_spline, data_spline, mean_c='C1', data_c='orange', alpha=0.05):
+    numtime = date2num(spline_dates(times))
+    mean = mean_spline(numtime)
+    data = data_spline
+
+    #ax.plot(times, mean, mean_c)
+
+    for i in range(data.shape[1]):
+        ax.fill_between(numtime,mean,data[:,i],facecolor=data_c,alpha=alpha)  
+
+
 # PLOTTING
 fig = plt.figure(figsize=(10,4))
 
@@ -279,16 +290,6 @@ temp_ax_format(temp_ax,tminmax,dates)
 
 temp_plotter(temp_ax, dates, t_mean_spline, t_data_spline)
 add_clouds_to(cloud_ax,dates,hcc_data_spline,mcc_data_spline,lcc_data_spline)
-
-def temp_plotter(ax, times, mean_spline, data_spline, mean_c='C1', data_c='orange', alpha=0.05):
-    numtime = date2num(spline_dates(times))
-    mean = mean_spline(numtime)
-    data = data_spline
-
-    #ax.plot(times, mean, mean_c)
-
-    for i in range(data.shape[1]):
-        ax.fill_between(numtime,mean,data[:,i],facecolor=data_c,alpha=alpha)  
 
 
 # light rain
