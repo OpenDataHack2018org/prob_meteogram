@@ -34,10 +34,12 @@ def add_clouds_to(axis,dates,highcloud,midcloud,lowcloud, interp=True):
     """ Adds the different types of clouds to a given axis."""
     # add sun (and moon?)
     for t in np.arange(len(dates)):
-        if dates[t].hour==12:
+        idate = datetime.datetime(2018,6,7,12,0)
+        while idate < dates[-1]:
             #sun = Circle((dates[t], 0.5), 0.2, color='yellow', zorder=0)
-            sun = Ellipse((dates[t], 0.5), 0.4/2., 0.4, angle=0.0, color='yellow', zorder=0)
+            sun = Ellipse((idate, 0.5), 0.4/2., 0.4, angle=0.0, color='yellow', zorder=0)
             axis.add_artist(sun)
+            idate = idate + datetime.timedelta(1)
 
     # interpolate dates (if set)
     if interp:
